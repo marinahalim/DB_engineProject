@@ -1,39 +1,81 @@
 export LC_COLLATE=C      
 shopt -s extglob
-declare -a firstColumnData
-declare -i flag=0 #not found primarykey
+#declare -a firstColumnData
+declare -i flag_for_value=0 #not found 
+declare -i flag_for_column=0 #not found 
+declare -a ColumnNames
+declare -a ColumnData
 
 
 read -p "Enter Table name : " tablename
 if [[ -f $tablename ]]; then 
     echo "You are in $tablename table"
-    select choice in select_all select_row select_record Exit
+      ColumnNames=($(sed -n '1p' ./$tablename))
+      #echo ${#ColumnNames[@]}
+       echo "columns of table : ${ColumnNames[@]}"
+    select choice in select_all select_row select_column  Exit
      do
        case $choice in 
-         select_all )
+         select_all )  ########option 1
            sed -n '1p' $tablename
            sed -n '3,$p' $tablename 
           ;;
-         select_row ) 
-            read -p "Enter primary key : " primarykey
-               firstColumnData=($(sed -n '3,$p' ./$tablename | cut -d" " -f1))
-               for (( j=0; j < ${#firstColumnData[@]}; j++ ));
-                do
-                      if [[ $primarykey == ${firstColumnData[$j]} ]] ;then 
-                           flag=1
-                            break
-                        fi      
-                    
-                done
-                if [[ $flag == 1 ]] ;then
-                  sed -n "/$primarykey/p" $tablename
-                else
-                  echo "invalid value"        
+         select_row )  #########option 2
+            read -p "Enter column name : " ColumnName
+            for (( i=0;i<${#ColumnNames[@]};i++ ))
+            do
+                if [[ ${ColumnNames[$i]} == $ColumnName ]];then
+                   flag_for_column=1;
+                   break
                 fi
-                flag=0
-       ;;
-       select_record )
+            done
+            for (( i=0; i<${#ColumnNames[@]}; i++ ))
+            do
+                  if [[ $flag_for_column == 0 ]] ;then
+                    echo "coulmn not found.."
+                    break;
+                  fi  
+                      if [[ $ColumnName == ${ColumnNames[$i]} ]] ;then
+                        flag_for_column=1;
+                            (( x=$i+1 ))
+                            ColumnData=($(sed -n '3,$p' ./$tablename | cut -d" " -f$x ))
+                            echo "Data of column : " "${ColumnData[@]}"
+                            echo "number column : " "${#ColumnData[@]}"
+                            read -p "Enter value of $ColumnName : " value #merna
 
+                             for (( j=0; j<${#ColumnData[@]}; j++ ))
+                              do
+                                  if [[ ${ColumnData[$j]} == $value ]] ;then
+                                      (( y=$j+3 ))
+                                      sed -n "$y p" ./$tablename
+                                      flag_for_value=1
+                                     # break
+                                  fi
+                              done
+                            if [[ $flag_for_value == 0 ]] ;then
+                                echo "record not found "  
+                            fi              
+                      fi
+            done
+       ;;
+       select_column )    ################################optin3 
+        read -p "Enter column name : " ColumnName
+            for (( i=0;i<${#ColumnNames[@]};i++ ))
+            do
+                if [[ ${ColumnNames[$i]} == $ColumnName ]] ;then
+                   flag_for_column=1;
+                   (( x=$i+1 ))
+                   break
+                fi  
+            done    
+            if [[ $flag_for_column == 1 ]] ;then
+                echo "column found.."
+                  ColumnData=($(sed -n '3,$p' ./$tablename | cut -d" " -f$x ))
+                  echo "${ColumnData[@]}"
+                
+            else
+                 echo "This coulmn not found" 
+            fi 
        ;;
        Exit )
         echo " i am exit from table $tablename"
