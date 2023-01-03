@@ -3,8 +3,8 @@ declare -a firstColumnData
 declare -a names
 declare -a datatypes
 declare -a inputEl
-declare -i datatypeflag=0 # unique
-declare -i flag=1        # consider that id unique
+declare -i datatypeflag=1  # correct 
+declare -i flag=1         # consider that id unique
 
 
 read -p "Enter Table name : " tablename
@@ -18,14 +18,16 @@ if [[ -f $tablename ]]; then
     do
         read -p "Enter value of ${names[$i]}: " value
         if [[ ${datatypes[$i]} == "int" ]] ;then
-              if [[ $value =~ ^[0-9]+$ ]] ;then
-                  datatypeflag=1
-                  echo "int"
+              if ! [[ $value =~ ^[0-9]+$ ]] ;then
+                  datatypeflag=0
+                  break
+                  #echo "int"
               fi
         elif [[ ${datatypes[$i]} == "string" ]] ;then
-              if [[ $value =~ ^[a-zA-Z]+$  ]] ;then
-                  datatypeflag=1
-                  echo "string"
+              if ! [[ $value =~ ^[a-zA-Z]+$  ]] ;then
+                  datatypeflag=0
+                  break
+                  #echo "string"
               fi
         fi 
         if [[ $datatypeflag == 1 ]] ;then
@@ -46,21 +48,21 @@ if [[ -f $tablename ]]; then
         else
           echo "check datatype please "
         fi
-        datatypeflag=0
+        #datatypeflag=0
     done
 else
     echo "This Table not Exist"
 fi
 for ((i=0; i <${#names[@]}; i++));
    do
-      if [[ $flag == 1 ]] ;then          # if primary key unique i will enter the data in file
+      if [[ $flag == 1 && $datatypeflag == 1 ]] ;then   # if primary key unique i will enter the data in file
           echo -n ${inputEl[$i]}" " >> ./$tablename
       else
-        echo "primary key should not repeate"
+        echo "Erorr ,cant insert.."
         break
-       fi 
+      fi 
 done
-if [[ $flag == 1 ]] ;then    # for move to new line in file
+if [[ $flag == 1 && $datatypeflag == 1 ]] ;then    # for move to new line in file
         echo >> ./$tablename
         echo "Done.." 
 fi      
